@@ -5,7 +5,6 @@ from client_ui import Login_win
 
 
 class Login_logic:
-
     login_win = Login_win()
 
     def get_name(self):
@@ -19,4 +18,8 @@ class Login_logic:
 
 
 def on_btn_login_clicked():
+    return 1
 
+
+def change_group():
+    return 0

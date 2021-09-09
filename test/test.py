@@ -33,7 +33,7 @@ def test_mail_send():
 
 if __name__ == '__main__':
     # str_dir=get_base_disk_dir()
-    loginWin = Login_win()
-    loginWin.show()
+    # loginWin = Login_win()
+    # loginWin.show()
     mainWin = Main_win()
     mainWin.show()
