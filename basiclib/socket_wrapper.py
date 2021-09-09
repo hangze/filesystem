@@ -32,11 +32,7 @@ class SocketConnect:
         cipher = PKCS1_cipher.new(self.server_public_key)
         encrypt_aes_key = base64.b64encode(cipher.encrypt(bytes(aes_key.encode("utf8"))))
 
-        #生成时间戳
-        time_stamp=str(time.time_ns())
-        # 用公钥生成签名
-
-        self.raw_send(self.socket, {'cmd': 'send_private_key', 'aes_key': encrypt_aes_key,'time_stamp':time_stamp,'signture':})
+        self.raw_send(self.socket, {'type': 'get_ca_book'})
         server_response = self.recv(self.socket)
         if server_response['response'] == 'ok':
             # 获取aes密钥成功，
