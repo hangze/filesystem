@@ -45,7 +45,6 @@ def test_generate_rsa_key():
 
 
 if __name__ == '__main__':
-    # str_dir=get_base_disk_dir()
     test_generate_rsa_key()
     loginWin = Login_win()
     loginWin.show()

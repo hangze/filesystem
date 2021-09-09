@@ -1,11 +1,9 @@
 import tkinter as tk
 from PIL import Image, ImageTk
 from tkinter import ttk
-from client_ui import Login_win
+from client_ui import Login_win, Main_win
 
-
-class Login_logic:
-    ca_public_key = '''-----BEGIN PUBLIC KEY-----
+ca_public_key = '''-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2CtiLcpfJkOptfZSwB6s
 HxZ/Y0vxBpJM25xMnzqAbxotT/ERsRMlEp6u5teSuJkTr4Epc2GGPWodVVpkMWQc
 OQFjW3AKgV3SFn8ufvAZ2Q3K8DWyzNH97CPgg/freINiuZmPG32dkucZKtixESqp
@@ -15,6 +13,7 @@ PUnO+wKP3pXVP+zEVrG3krsG45lLJENVq4i/hrFAuAiQlY5Rpt6wjD9/V7d257ye
 9QIDAQAB
 -----END PUBLIC KEY-----'''
 
+class Login_logic:
     login_win = Login_win()
 
     def get_name(self):
@@ -37,3 +36,8 @@ if __name__ == '__main__':
     loginWin.show()
     mainWin = Main_win()
     mainWin.show()
+
+
+def change_group():
+    return 0
+

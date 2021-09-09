@@ -111,9 +111,8 @@ class Main_win:
         # self.name = tk.StringVar()  # 显示用户名
         # self.lsb_option = tk.IntVar() #隐写按钮
 
-        # 定义列的名称
-        self.win.tree = ttk.Treeview(show="tree")
-        self.win.tree.place(x=25, y=20, relheight=0.8, relwidth=0.6)
+        self.win.tree = ttk.Treeview(show="tree")  # 定义列的名称
+        self.win.tree.place(x=25, y=20, relheight=0.8, relwidth=0.5)
 
         self.my_id = self.win.tree.insert("", 0, "中国", text="中国China", values="1")  # ""表示父节点是根
         self.my_idx1 = self.win.tree.insert(self.my_id, 0, "广东", text="中国广东", values="2")  # text表示显示出的文本，values是隐藏的值
@@ -123,41 +122,95 @@ class Main_win:
 
         # 鼠标选中一行回调
         def select_tree(event):
-            for item in self.tree.selection():
-                item_text = self.tree.item(item, "values")
+            for item in self.win.tree.selection():
+                item_text = self.win.tree.item(item, "values")
                 print(item_text)
 
-        # 选中行
-        # tree.bind('<<TreeviewSelect>>', selectTree)
+        self.win.tree.bind(sequence='<ButtonPress-1>', func=select_tree)  # 鼠标双击选中一行
 
         self.group_list = tk.Listbox(self.win)
-        self.group_list.place(relx=0.75, rely=0.15, relheight=0.72, relwidth=0.23)
+        self.group_list.place(relx=0.75, rely=0.15, relheight=0.40, relwidth=0.23)
 
-        self.label1 = tk.Label(self.win)
-        self.label1.place(relx=0.76, rely=0.075, height=21, width=101)  # 规定显示框位置以及大小
-        self.label1.configure(text='群组列表')  # 显示该列表为”在线用户列表“
+        # 鼠标双击选中一行回调
+        def change_group(event):
+            print("got it")
+            print(self.group_list.get(self.group_list.curselection()))
 
-        self.btn_send1 = tk.Button(self.win)
-        self.btn_send1.place(relx=0.5, rely=0.89, height=28, width=108)
-        self.btn_send1.configure(text='上传文件')
+        self.group_list.bind(sequence='<Double-Button>', func=change_group)  # 双击切换群组
 
-        self.btn_send2 = tk.Button(self.win)
-        self.btn_send2.place(relx=0.248, rely=0.89, height=28, width=108)
-        self.btn_send2.configure(text='删除文件')
+        self.group_list.insert(1, "fi")
+        self.group_list.insert(2, "huang")
+        self.group_list.insert(3, "ze")
 
-        self.btn_file = tk.Button(self.win)
-        self.btn_file.place(relx=0.752, rely=0.89, height=28, width=108)
-        self.btn_file.configure(text='下载文件')
-        self.btn_file.configure(state='disabled')
+        self.group_name = tk.StringVar()  # 群组输入框
+        self.group_code = tk.StringVar()  # 群组邀请码输入框
 
-        # self.label2 = tk.Label(self.win)
-        # self.label2.place(relx=0.24, rely=0.0, height=57, width=140)
-        # self.label2.configure(textvariable=self.name)
+        # 标签 群组名称
+        self.label_group_name = tk.Label(self.win, bg="#7FFFAA", font=('宋体', 11))
+        self.label_group_name.place(relx=0.62, rely=0.55, height=28, width=54)  # 规定显示框位置以及大小
+        self.label_group_name.configure(text='群组名')  # 在输入框前显示”群组名称“两字引导用户输入
+
+        self.entry_group_name = tk.Entry(self.win)
+        self.entry_group_name.place(relx=0.75, rely=0.56, height=26, relwidth=0.23)  # 规定显示框位置以及大小
+        self.entry_group_name.configure(textvariable=self.group_name)
+
+        # 标签 群组邀请码
+        self.label_code = tk.Label(self.win, bg="#00FFFF", font=('宋体', 11))
+        self.label_code.place(relx=0.62, rely=0.68, height=28, width=54)  # 规定显示框位置以及大小
+        self.label_code.configure(text='邀请码')  # 在输入框前显示”群组名称“两字引导用户输入
+
+        self.entry_code = tk.Entry(self.win)
+        self.entry_code.place(relx=0.75, rely=0.68, height=26, relwidth=0.23)  # 规定显示框位置以及大小
+        self.entry_code.configure(textvariable=self.group_code)
+
+        self.label_group_list = tk.Label(self.win)
+        self.label_group_list.place(relx=0.76, rely=0.075, height=21, width=70)  # 规定显示框位置以及大小
+        self.label_group_list.configure(text='群组列表')  # 显示该列表为”群组列表“
+
+        self.btn_myspace = tk.Button(self.win)
+        self.btn_myspace.place(relx=0.58, rely=0.05, height=28, width=80)
+        self.btn_myspace.configure(text='我的空间')
+
+        self.btn_add_group = tk.Button(self.win)
+        self.btn_add_group.place(relx=0.75, rely=0.78, height=28, width=80)
+        self.btn_add_group.configure(text='添加群组')
+
+        self.btn_upload = tk.Button(self.win)
+        self.btn_upload.place(relx=0.5, rely=0.89, height=28, width=108)
+        self.btn_upload.configure(text='上传文件')
+
+        self.btn_delete = tk.Button(self.win)
+        self.btn_delete.place(relx=0.248, rely=0.89, height=28, width=108)
+        self.btn_delete.configure(text='删除文件')
+
+        self.btn_download = tk.Button(self.win)
+        self.btn_download.place(relx=0.752, rely=0.89, height=28, width=108)
+        self.btn_download.configure(text='下载文件')
+        self.btn_download.configure(state='disabled')
+
+        def on_btn_myspace_click():
+            print('successfully')
+
+        def on_btn_add_group_click():
+            print(self.group_name.get())
+            print(self.group_code.get())
+
+        def on_btn_upload_click():
+            print(self.win.tree.item(self.win.tree.focus()))
+
+        def on_btn_download_click():
+            print('successfully')
+
+        self.btn_myspace.configure(command=on_btn_myspace_click)
+        self.btn_add_group.configure(command=on_btn_add_group_click)
+        self.btn_upload.configure(command=on_btn_upload_click)
+        self.btn_download.configure(command=on_btn_download_click)
 
         # self.C1 = tk.Checkbutton(self.win, text="开启lsb隐写", variable=self.lsb_option,  onvalue = 1, offvalue = 0)
         # self.C1.place(relx=0.01, rely=0.01, height=57, width=140)
 
     # -------------------------------------------------------------------------------------------------
+
 
 """
 class Friends_win:
