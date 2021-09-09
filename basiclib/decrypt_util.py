@@ -72,4 +72,5 @@ def decrypt(data, key):
 
 #todo 请求的相关数据，对其进行签名，返回签名结果
 def signture(ip_addr:str, pad_data:str ,pri_key:str):
+    
     pass
