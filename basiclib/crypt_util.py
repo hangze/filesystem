@@ -1,11 +1,16 @@
+import base64
+import hashlib
+import json
+import random
 import string
+
 from Crypto import Random
 from Crypto.Cipher import AES
-import random
-import json
-
-
+from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher
 # 生成aes密钥
+from Crypto.PublicKey import RSA
+
+
 def keyGenerater(length):
     '''''生成指定长度的秘钥'''
     if length not in (16, 24, 32):
@@ -70,7 +75,39 @@ def decrypt(data, key):
         real_data = img_data
         return AES.new(key, AES.MODE_CFB, real_data[:16]).decrypt(real_data[16:])
 
-#todo 请求的相关数据，对其进行签名，返回签名结果
-def signture(ip_addr:str, pad_data:str ,pri_key:str):
-    
-    pass
+
+# 使用python自带的hashlib库
+def get_md5_value(str):
+    my_md5 = hashlib.md5()  # 获取一个MD5的加密算法对象
+    my_md5.update(str)  # 得到MD5消息摘要
+    my_md5_Digest = my_md5.hexdigest()  # 以16进制返回消息摘要，32位
+    return my_md5_Digest
+
+
+# 对相关数据进行签名，返回签名结果
+def create_signture(data_dict: dict, ca_private_key: str):
+    # 获取数据的hash码
+    new_data_dict = sorted(data_dict)
+    str_data = str(new_data_dict)
+    data_hash = get_md5_value(str_data)
+
+    # 对hash码进行加密
+    pri_key = RSA.importKey(ca_private_key)
+    cipher = PKCS1_cipher.new(pri_key)
+    encrypt_data_hash = base64.b64encode(cipher.encrypt(bytes(data_hash.encode("utf8"))))
+    return encrypt_data_hash
+
+
+def verify_signture(data_dict, crypt_hash, ca_public_key: str):
+    # 获取数据的hash码
+    new_data_dict = sorted(data_dict)
+    str_data = str(new_data_dict)
+    data_hash = get_md5_value(str_data)
+
+    # 对数据的加密hash进行解密
+    public_cipher = PKCS1_cipher.new(RSA.importKey(ca_public_key))
+    decrypt_hash = public_cipher.decrypt(base64.b64decode(crypt_hash), 0)
+
+    if data_hash == decrypt_hash:
+        return True
+    return False
