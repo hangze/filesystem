@@ -19,3 +19,7 @@ class CommonUtil():
     def get_server_port():
         server_port=8888
         return server_port
+
+
+def get_base_disk_dir():
+    return None

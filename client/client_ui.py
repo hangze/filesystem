@@ -83,6 +83,18 @@ class Login_win:
         self.btn_reg.place(relx=0.6, rely=0.65, height=32, width=88)  # 规定显示框位置以及大小
         self.btn_reg.configure(text='注册')  # 显示注册按钮
 
+        def on_btn_login_click():
+            print(self.user.get())
+            print(self.email.get())
+            print(self.pwd.get())
+
+        def on_btn_reg_click():
+            print(self.user.get())
+            print(self.email.get())
+            print(self.pwd.get())
+
+        self.btn_login.configure(command=on_btn_login_click)
+        self.btn_reg.configure(command=on_btn_reg_click)
 
 # 主窗口 -- 文件列表主界面
 class Main_win:
@@ -186,7 +198,7 @@ class Main_win:
         self.btn_download = tk.Button(self.win)
         self.btn_download.place(relx=0.752, rely=0.89, height=28, width=108)
         self.btn_download.configure(text='下载文件')
-        self.btn_download.configure(state='disabled')
+        #self.btn_download.configure(state='disabled')
 
         def on_btn_myspace_click():
             print('successfully')
@@ -199,6 +211,7 @@ class Main_win:
             print(self.win.tree.item(self.win.tree.focus()))
 
         def on_btn_download_click():
+            print(self.win.tree.focus())
             print('successfully')
 
         self.btn_myspace.configure(command=on_btn_myspace_click)
