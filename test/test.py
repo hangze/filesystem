@@ -3,6 +3,8 @@ from basiclib.mail_util import MailServer
 import smtplib
 from email.mime.text import MIMEText
 
+from client.client_ui import Login_win
+from client.client_ui import Main_win
 
 def test_mail_send():
     # todo 此处可写代码验证是否邮件能否发送成功，非必须
@@ -13,7 +15,7 @@ def test_mail_send():
     psw = 'EKYKJABHUUBFDJTN'  # 发件人密码
     receiver = "784985696@qq.com"  # 接收人
 
-    #编写邮件主题和正文，正文用的html格式
+    # 编写邮件主题和正文，正文用的html格式
     subject = '邮件主题'
     body = '<p>这是个发送邮件的正文</p>'  # 定义邮件正文为html
     msg = MIMEText(body, 'html', 'utf-8')
@@ -30,5 +32,8 @@ def test_mail_send():
 
 
 if __name__ == '__main__':
-    #  str_dir=get_base_disk_dir()
-    test_mail_send()
+    # str_dir=get_base_disk_dir()
+    loginWin = Login_win()
+    loginWin.show()
+    mainWin = Main_win()
+    mainWin.show()

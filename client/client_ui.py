@@ -15,10 +15,8 @@ from typing import Any
 
 from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher
 from Crypto.PublicKey import RSA
-
-import utils
 from PIL import Image, ImageTk
-from communication import ClientConnect as Connection
+from tkinter import ttk
 
 
 class Login_win:
@@ -32,6 +30,7 @@ class Login_win:
     def __init__(self):
         self.win = tk.Tk()  # 窗口
         self.user = tk.StringVar()  # 用户名输入框
+        self.email = tk.StringVar()  # 邮箱输入框
         self.pwd = tk.StringVar()  # 密码输入框
 
         self.win.geometry("320x240")  # 主窗体长*宽
@@ -41,7 +40,7 @@ class Login_win:
         # 添加背景图片
         self.img_tk = None
         self.canvas = tk.Canvas(self.win, width=320, height=240)
-        img = Image.open('./bg.jpg').resize((320, 240))
+        img = Image.open('../bg.jpg').resize((320, 240))
         self.img_tk = ImageTk.PhotoImage(img)
         self.canvas.create_image(160, 120, image=self.img_tk)
         self.canvas.pack()
@@ -55,27 +54,37 @@ class Login_win:
         self.entry_user.place(relx=0.32, rely=0.11, height=26, relwidth=0.554)  # 规定显示框位置以及大小
         self.entry_user.configure(textvariable=self.user)
 
+        # 标签 邮箱
+        self.label1 = tk.Label(self.win, bg="#7D7DFF", font=('宋体', 11))
+        self.label1.place(relx=0.12, rely=0.27, height=31, width=50)  # 规定显示框位置以及大小
+        self.label1.configure(text='邮箱')  # 在输入框前显示”邮箱“两字引导用户输入
+
+        self.entry_email = tk.Entry(self.win)
+        self.entry_email.place(relx=0.32, rely=0.28, height=26, relwidth=0.554)  # 规定显示框位置以及大小
+        self.entry_email.configure(textvariable=self.email)
+
         # 标签 密码
         self.label2 = tk.Label(self.win, bg="#00FFFF", font=('宋体', 11))
-        self.label2.place(relx=0.12, rely=0.27, height=31, width=50)  # 规定显示框位置以及大小
+        self.label2.place(relx=0.12, rely=0.44, height=31, width=50)  # 规定显示框位置以及大小
         self.label2.configure(text='密码')  # 在输入框前显示”密码“两字引导用户输入
 
         self.entry_pwd = tk.Entry(self.win)
-        self.entry_pwd.place(relx=0.32, rely=0.28, height=26, relwidth=0.554)  # 规定显示框位置以及大小
+        self.entry_pwd.place(relx=0.32, rely=0.45, height=26, relwidth=0.554)  # 规定显示框位置以及大小
         self.entry_pwd.configure(show="*")  # 将用户输入的密码显示为”*“以保证密码的安全性
         self.entry_pwd.configure(textvariable=self.pwd)
 
         # 创建登录按钮
         self.btn_login = tk.Button(self.win, font=('宋体', 11))
-        self.btn_login.place(relx=0.13, rely=0.6, height=32, width=88)  # 规定显示框位置以及大小
+        self.btn_login.place(relx=0.13, rely=0.65, height=32, width=88)  # 规定显示框位置以及大小
         self.btn_login.configure(text='登录')  # 显示登录按钮
+
         # 创建注册按钮
         self.btn_reg = tk.Button(self.win, font=('宋体', 11))
-        self.btn_reg.place(relx=0.6, rely=0.6, height=32, width=88)  # 规定显示框位置以及大小
+        self.btn_reg.place(relx=0.6, rely=0.65, height=32, width=88)  # 规定显示框位置以及大小
         self.btn_reg.configure(text='注册')  # 显示注册按钮
 
 
-# 主窗口 -- 聊天界面
+# 主窗口 -- 文件列表主界面
 class Main_win:
     closed_fun = None  # 初始化closed_fun
 
@@ -92,48 +101,65 @@ class Main_win:
     def __init__(self):
 
         self.win = tk.Tk()  # 窗口
-        #self.win =tk.Toplevel()
+        # self.win =tk.Toplevel()
         self.win.protocol('WM_DELETE_WINDOW', self.destroy)  # 关闭之前的窗口
         self.win.geometry("480x320")  # 主窗体长*宽
-        self.win.title("聊天室")  # 主窗体标题
+        self.win.title("磁盘空间")  # 主窗体标题
         self.win.resizable(width=False, height=False)  # 设置窗口宽不可变，高不可变，默认为True
 
-        self.msg = tk.StringVar()  # 显示输入信息
-        self.name = tk.StringVar()  # 显示用户名
-        self.lsb_option = tk.IntVar() #隐写按钮
+        # self.msg = tk.StringVar()  # 显示输入信息
+        # self.name = tk.StringVar()  # 显示用户名
+        # self.lsb_option = tk.IntVar() #隐写按钮
 
-        self.user_list = tk.Listbox(self.win)
-        self.user_list.place(relx=0.75, rely=0.15, relheight=0.72, relwidth=0.23)  # 规定显示框位置以及大小
+        # 定义列的名称
+        self.win.tree = ttk.Treeview(show="tree")
+        self.win.tree.place(x=25, y=20, relheight=0.8, relwidth=0.6)
+
+        self.my_id = self.win.tree.insert("", 0, "中国", text="中国China", values="1")  # ""表示父节点是根
+        self.my_idx1 = self.win.tree.insert(self.my_id, 0, "广东", text="中国广东", values="2")  # text表示显示出的文本，values是隐藏的值
+        self.my_idx2 = self.win.tree.insert(self.my_id, 1, "江苏", text="中国江苏", values="3")
+        self.my_idy = self.win.tree.insert("", 1, "美国", text="美国USA", values="4")
+        self.my_idy1 = self.win.tree.insert(self.my_idy, 0, "加州", text="美国加州", values="5")
+
+        # 鼠标选中一行回调
+        def select_tree(event):
+            for item in self.tree.selection():
+                item_text = self.tree.item(item, "values")
+                print(item_text)
+
+        # 选中行
+        # tree.bind('<<TreeviewSelect>>', selectTree)
+
+        self.group_list = tk.Listbox(self.win)
+        self.group_list.place(relx=0.75, rely=0.15, relheight=0.72, relwidth=0.23)
 
         self.label1 = tk.Label(self.win)
         self.label1.place(relx=0.76, rely=0.075, height=21, width=101)  # 规定显示框位置以及大小
-        self.label1.configure(text='在线用户列表')  # 显示该列表为”在线用户列表“
+        self.label1.configure(text='群组列表')  # 显示该列表为”在线用户列表“
 
-        self.history = tk.Text(self.win)
-        self.history.place(relx=0.02, rely=0.24, relheight=0.63, relwidth=0.696)
-        self.history.configure(state='disabled')
+        self.btn_send1 = tk.Button(self.win)
+        self.btn_send1.place(relx=0.5, rely=0.89, height=28, width=108)
+        self.btn_send1.configure(text='上传文件')
 
-        self.entry_msg = tk.Entry(self.win)
-        self.entry_msg.place(relx=0.02, rely=0.9, height=24, relwidth=0.59)
-        self.entry_msg.configure(textvariable=self.msg)
-
-        self.btn_send = tk.Button(self.win)
-        self.btn_send.place(relx=0.62, rely=0.89, height=28, width=45)
-        self.btn_send.configure(text='发送')
+        self.btn_send2 = tk.Button(self.win)
+        self.btn_send2.place(relx=0.248, rely=0.89, height=28, width=108)
+        self.btn_send2.configure(text='删除文件')
 
         self.btn_file = tk.Button(self.win)
         self.btn_file.place(relx=0.752, rely=0.89, height=28, width=108)
-        self.btn_file.configure(text='发送文件')
+        self.btn_file.configure(text='下载文件')
         self.btn_file.configure(state='disabled')
 
-        self.label2 = tk.Label(self.win)
-        self.label2.place(relx=0.24, rely=0.0, height=57, width=140)
-        self.label2.configure(textvariable=self.name)
+        # self.label2 = tk.Label(self.win)
+        # self.label2.place(relx=0.24, rely=0.0, height=57, width=140)
+        # self.label2.configure(textvariable=self.name)
 
-        self.C1 = tk.Checkbutton(self.win, text="开启lsb隐写", variable=self.lsb_option,  onvalue = 1, offvalue = 0)
-        self.C1.place(relx=0.01, rely=0.01, height=57, width=140)
+        # self.C1 = tk.Checkbutton(self.win, text="开启lsb隐写", variable=self.lsb_option,  onvalue = 1, offvalue = 0)
+        # self.C1.place(relx=0.01, rely=0.01, height=57, width=140)
 
     # -------------------------------------------------------------------------------------------------
+
+"""
 class Friends_win:
     closed_fun = None
 
@@ -149,7 +175,7 @@ class Friends_win:
 
     def __init__(self):
         # self.win = tk.Tk()  # 窗口
-        self.win =tk.Toplevel()
+        self.win = tk.Toplevel()
         self.add = tk.StringVar()  # 添加好友输入框
         self.delete = tk.StringVar()  # 删除好友操作输入框
 
@@ -182,5 +208,5 @@ class Friends_win:
 
         self.friends_list = tk.Listbox(self.win)  # 好友列表
         self.friends_list.place(relx=0.75, rely=0.15, relheight=0.72, relwidth=0.23)  # 规定显示框位置以及大小
-
+"""
 # -------------------------------------------------------------------------------------

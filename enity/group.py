@@ -1,6 +1,9 @@
 from enity.user import User
 
-#群组，继承自User
+
+# 群组，继承自User
+
+
 class Group(User):
     group_member=[]
 
