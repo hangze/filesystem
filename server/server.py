@@ -75,8 +75,6 @@ class file_server(socketserver.BaseRequestHandler):
                             fris.append(friend)
                     socket_util.send(self.request, {'type': 'get_friends', 'data': fris}, self.aes_key)
 
-
-
     def finish(self):
         if self.authed:
             self.authed = False
@@ -91,7 +89,7 @@ def handler_init():
     pass
 
 
-server_private_key='''-----BEGIN RSA PRIVATE KEY-----
+server_private_key = '''-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA4S8MgQsMg4ckkmlyo9jzQBPYwxz7Q9Fjuap1al3oSvqtcRx8
 Jndguwlk4admQoaG+3s6YAXoE8FLg+A+Nx41344w8/tTTOr1uyd9KNCzYqyEAz5k
 m/ZFel6gWGCTwDVjT1j2CjXhgkAOEWjvzE3eBKhf2fLv5gDf1pvsEHca8avFkQTj
@@ -119,7 +117,7 @@ LVLjDC0Lud8mQqVuHdjdpc9q2bDSfVe14uTm3h4R5s0cGsRps0Rah5Q25mM3ZAsi
 juut+tE/tGFSLrO9kGwPX9875cqy3nB7CiZGghPh+Jl+fOCXWX79
 -----END RSA PRIVATE KEY-----'''
 
-server_public_key='''-----BEGIN PUBLIC KEY-----
+server_public_key = '''-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4S8MgQsMg4ckkmlyo9jz
 QBPYwxz7Q9Fjuap1al3oSvqtcRx8Jndguwlk4admQoaG+3s6YAXoE8FLg+A+Nx41
 344w8/tTTOr1uyd9KNCzYqyEAz5km/ZFel6gWGCTwDVjT1j2CjXhgkAOEWjvzE3e
@@ -135,6 +133,6 @@ if __name__ == '__main__':
 
     # 接收新客户端的连接请求，递交其IP及端口号至Handler函数，建立线程
     # 在TCP协议下 完成与client线程的注册登录、好友状态及P2P聊天连接分配等功能
-    server_port=CommonUtil.get_server_port()
-    app = socketserver.ThreadingTCPServer(('0.0.0.0',server_port), file_server)
+    server_port = CommonUtil.get_server_port()
+    app = socketserver.ThreadingTCPServer(('0.0.0.0', server_port), file_server)
     app.serve_forever()
