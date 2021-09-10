@@ -17,6 +17,7 @@ from enity.user import User
 
 class SocketConnect:
     server_public_key = ""
+    user=User()
 
     def __init__(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -33,6 +33,7 @@ class file_server(socketserver.BaseRequestHandler):
         self.authed = False
 
     def handle(self):
+        global user_service
         while True:
             data = socket_util.recv(self.request, self.aes_key)  # data 为接收到的client所发送的数据字典
             if not self.authed:
@@ -88,9 +89,9 @@ class file_server(socketserver.BaseRequestHandler):
                     user_pwd = data["user_pwd"]
                     try:
                         token = user_service.login(user_name, user_pwd)
-                        socket_util.send(self.request, {'response': 'ok', 'token': token, 'msg': '认证成功'}, self.aes_key)
+                        socket_util.send(self.request, {'type':'login_result','response': 'ok', 'token': token, 'msg': '认证成功'}, self.aes_key)
                     except Exception as e:
-                        socket_util.send(self.request, {'response': 'fail', 'msg': '认证失败'}, self.aes_key)
+                        socket_util.send(self.request, {'type':'login_result','response': 'fail', 'msg': '认证失败'}, self.aes_key)
                         # -----------------------------------------------------------------------------------------------------------
                 elif data['token'] == '':
                     socket_util.send(self.request, {'type': 'operation_msg', 'msg': "请登录"}, self.aes_key)
@@ -120,9 +121,6 @@ class file_server(socketserver.BaseRequestHandler):
             self.authed = False
             if self.user in file_server.clients.keys():
                 del file_server.clients[self.user]
-            for user in file_server.clients.keys():
-                socket_util.send(file_server.clients[user].request, {'type': 'peer_left', 'peer': self.user},
-                                 file_server.clients[user].aes_key)
 
 
 def handler_init():

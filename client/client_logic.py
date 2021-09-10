@@ -1,9 +1,9 @@
 import tkinter as tk
 import tkinter.messagebox
 from tkinter import messagebox
+from tkinter.ttk import Treeview
 
 from PIL import Image, ImageTk
-# from tkinter import ttk
 
 from basiclib.common_util import CommonUtil
 from basiclib.socket_wrapper import SocketConnect
@@ -88,7 +88,8 @@ class Login_win:
         user_name = self.user.get()
         user_email = self.email.get()
         user_pwd = self.pwd.get()
-        # Login_logic.login(user_name)
+
+        client_logic.login(user_name, user_pwd, user_email)
 
     def on_btn_reg_click(self):
         user_name = self.user.get()
@@ -109,10 +110,8 @@ class Login_win:
         client_logic.login()
 
 
-
-
 # 主窗口 -- 文件列表主界面
-class Main_win:
+class Main_Win:
     closed_fun = None  # 初始化closed_fun
 
     def show(self):
@@ -138,7 +137,7 @@ class Main_win:
         # self.name = tk.StringVar()  # 显示用户名
         # self.lsb_option = tk.IntVar() #隐写按钮
 
-        self.win.tree = ttk.Treeview(show="tree")  # 定义列的名称
+        self.win.tree = Treeview(show="tree")  # 定义列的名称
         self.win.tree.place(x=25, y=20, relheight=0.8, relwidth=0.5)
 
         self.my_id = self.win.tree.insert("", 0, "中国", text="中国China", values="1")  # ""表示父节点是根
@@ -242,7 +241,8 @@ class Main_win:
 
 
 class Client_Logic:
-    loginWin = None
+    login_win = None
+    main_win=None
     user = User()
 
     def __init__(self):
@@ -266,8 +266,12 @@ class Client_Logic:
                      "user_pwd": user_pwd,
                      "user_email": user_email
                      }
-        server_connection.send(data_dict)
 
+        server_connection.user.user_name = user_name
+        server_connection.user.user_pwd = user_pwd
+        server_connection.user.user_email = user_email
+
+        server_connection.send(data_dict)
 
     @staticmethod
     def register(user_name, user_pwd, user_email):
@@ -291,11 +295,23 @@ class Client_Logic:
             data = server_connection.recv()  # data为接收到server发送的数据 不同请求（'type'）接收到的消息类型不同
             if data is None:
                 continue
+            # if data
             if data['type'] == 'operation_msg':
                 if data['response'] == 'ok':
                     messagebox.showinfo('成功', data['msg'])
 
                 elif data['response'] == 'fail':
+                    messagebox.showerror('警告', data['msg'])
+            elif data['type'] == 'login_result':
+                if data['response'] == 'ok':
+                    server_connection.user.user_token = data['token']
+                    messagebox.showinfo('成功', data['msg'])
+
+                    # self.login_win.destroy()
+                    self.main_win = Main_Win()
+                    self.main_win.show()
+                elif data['response'] == 'fail':
+                    server_connection.user = User()
                     messagebox.showerror('警告', data['msg'])
             if data['type'] == 'get_users':
                 users = {}
@@ -310,11 +326,11 @@ if __name__ == '__main__':
     # global server_connection
     server_connection = SocketConnect()
     client_logic = Client_Logic()
-    client_logic.loginWin = Login_win()
+    client_logic.login_win = Login_win()
     server_connection.connect_to_server(server_ip=CommonUtil.get_server_ip(),
                                         server_port=CommonUtil.get_server_port(), recv_async=client_logic.recv_async)
 
-    client_logic.loginWin.show()
+    client_logic.login_win.show()
 
 
 def change_group():

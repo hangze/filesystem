@@ -22,7 +22,7 @@ class UserService:
     # @staticmethod
 
     def save_user_dict(self):
-        self.user_dict = CommonUtil.save_data("user_dict.dat", self.user_dict)
+        CommonUtil.save_data("user_dict.dat", self.user_dict)
 
     def load_user_dict(self):
         user_dict = CommonUtil.load_data("user_dict.dat")
@@ -30,12 +30,12 @@ class UserService:
             self.user_dict=user_dict
 
     def save_token_dict(self):
-        self.user_dict = CommonUtil.save_data("token_dict.dat", self.user_dict)
+       CommonUtil.save_data("token_dict.dat", self.token_dict)
 
     def load_token_dict(self):
-        user_dict= CommonUtil.load_data("token_dict.dat")
-        if user_dict:
-            self.user_dict =user_dict
+        token_dict= CommonUtil.load_data("token_dict.dat")
+        if token_dict:
+            self.token_dict =token_dict
 
     # 登录后添加token
     def add_token(self, token: str):
@@ -55,7 +55,7 @@ class UserService:
             print("密码正确，登录成功")
             token = sha1(os.urandom(24)).hexdigest()
             self.token_dict[token] = user_name
-            pickle.dumps(self.token_dict, open('token_set.dat', 'wb'))
+            self.save_token_dict()
             return token
 
     def register(self, user_name, user_pwd, user_email):
@@ -71,7 +71,7 @@ class UserService:
         user_dir = FileService.create_user_disk(user_name=user_name)
         user.user_disk_name = user_dir
         user.user_file_sec_key = sha1(os.urandom(24)).hexdigest()
-        self.user_dict.update({'user_name': user})
+        self.user_dict.update({user_name: user})
         self.save_user_dict()
 
     def retrive_pwd(self, user_name, user_email):
