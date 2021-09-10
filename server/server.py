@@ -77,9 +77,12 @@ class file_server(socketserver.BaseRequestHandler):
                     user_email=data["user_email"]
                     try:
                         user_service.register(user_name=user_name, user_pwd=user_pwd, user_email=user_email)
-                        socket_util.send(self.request, {'response': 'ok','msg': '注册成功'}, self.aes_key)
+                        socket_util.send(self.request, {'type':'operation_msg','response': 'ok','msg': '注册成功'}, self.aes_key)
                     except Exception as e:
-                        socket_util.send(self.request, {'response': 'fail', 'msg': '注册失败'}, self.aes_key)
+                        socket_util.send(self.request, {'type':'operation_msg','response': 'fail', 'msg': '注册失败'}, self.aes_key)
+                        raise e
+                        print(e)
+
                 elif data["type"] == "login":
                     user_name = data["user_name"]
                     user_pwd = data["user_pwd"]

@@ -16,7 +16,7 @@ class UserService:
     user_name_verify_code = dict()
 
     def __init__(self):
-        self.save_user_dict()
+        self.load_token_dict()
         self.load_user_dict()
 
     # @staticmethod
@@ -25,13 +25,17 @@ class UserService:
         self.user_dict = CommonUtil.save_data("user_dict.dat", self.user_dict)
 
     def load_user_dict(self):
-        self.user_dict = CommonUtil.load_data("user_dict.dat")
+        user_dict = CommonUtil.load_data("user_dict.dat")
+        if user_dict:
+            self.user_dict=user_dict
 
     def save_token_dict(self):
         self.user_dict = CommonUtil.save_data("token_dict.dat", self.user_dict)
 
     def load_token_dict(self):
-        self.user_dict = CommonUtil.load_data("token_dict.dat")
+        user_dict= CommonUtil.load_data("token_dict.dat")
+        if user_dict:
+            self.user_dict =user_dict
 
     # 登录后添加token
     def add_token(self, token: str):
@@ -57,7 +61,13 @@ class UserService:
     def register(self, user_name, user_pwd, user_email):
         if user_name in self.user_dict.keys():
             raise Exception("用户已存在，请更改用户名")
-        user = User(user_name=user_name, user_pwd=user_pwd, user_mail=user_email)
+
+        user = User()
+        user.user_name=user_name
+        user.user_email=user_email
+        user.pwd_key=user_pwd
+        # 创建用户文件目录
+        # 创建用户file_key，用于加密文件
         user_dir = FileService.create_user_disk(user_name=user_name)
         user.user_disk_name = user_dir
         user.user_file_sec_key = sha1(os.urandom(24)).hexdigest()

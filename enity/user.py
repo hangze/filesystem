@@ -6,8 +6,8 @@ class User(Owner):
     user_group = list()
     user_token=None
 
-    def __init__(self, pwd_key: str, user_name: str, user_email, user_disk_name: str, user_file_sec_key: str):
-        super().__init__()
+    def __init__(pwd_key: str, user_name: str, user_email, user_disk_name: str, user_file_sec_key: str):
+        super().__init__(pwd_key,user_name, user_email, user_disk_name, user_file_sec_key)
 
     def __init__(self):
         pass

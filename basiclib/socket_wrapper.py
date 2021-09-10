@@ -97,7 +97,7 @@ class SocketConnect:
     # 使用socket收-发数据
     def send(self, data_dict):
         try:
-            send(self.socket, data_dict, 1)
+            send(self.socket, data_dict, self.aes_key)
         except Exception as e:
             print(e)
 

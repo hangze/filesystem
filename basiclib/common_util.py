@@ -97,14 +97,17 @@ ywIDAQAB
 
     @staticmethod
     def load_data(path):
-        try:
-            return pickle.load(open(path, 'rb'))
-        except:
-            return {}
+        if os.path.exists(path):
+            try:
+                return pickle.load(open(path, 'rb'))
+            except:
+                return {}
 
     @staticmethod
     def save_data(path, data):
         try:
-            return pickle.dump(open(path, 'rb'))
-        except:
+            return pickle.dump(data,open(path, 'wb'))
+        except Exception as e:
+            raise e
+            print(e)
             return {}

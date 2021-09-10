@@ -1,13 +1,14 @@
 import tkinter as tk
+import tkinter.messagebox
+from tkinter import messagebox
+
 from PIL import Image, ImageTk
-from tkinter import ttk
+# from tkinter import ttk
 
 from basiclib.common_util import CommonUtil
 from basiclib.socket_wrapper import SocketConnect
 # from client_ui import Login_win, Main_win
 from enity.user import User
-
-
 
 
 class Login_win:
@@ -18,7 +19,6 @@ class Login_win:
         self.win.destroy()
 
     def __init__(self):
-
         self.win = tk.Tk()  # 窗口
         self.user = tk.StringVar()  # 用户名输入框
         self.email = tk.StringVar()  # 邮箱输入框
@@ -75,13 +75,14 @@ class Login_win:
         self.btn_reg.place(relx=0.6, rely=0.65, height=32, width=88)  # 规定显示框位置以及大小
         self.btn_reg.configure(text='注册')  # 显示注册按钮
 
-        # 创建注册按钮
-        self.btn_reg = tk.Button(self.win, font=('宋体', 11))
-        self.btn_reg.place(relx=0.13, rely=0.85, height=32, width=88)  # 规定显示框位置以及大小
-        self.btn_reg.configure(text='密码找回')  # 显示注册按钮
+        # 创建密码按钮
+        self.btn_retre_pwd = tk.Button(self.win, font=('宋体', 11))
+        self.btn_retre_pwd.place(relx=0.13, rely=0.85, height=32, width=88)  # 规定显示框位置以及大小
+        self.btn_retre_pwd.configure(text='密码找回')  # 显示注册按钮
 
         self.btn_login.configure(command=self.on_btn_login_click)
-        self.btn_reg.configure(command=self.on_btn_reg_click())
+        self.btn_reg.configure(command=self.on_btn_reg_click)
+        self.btn_retre_pwd.configure(command=self.on_btn_reg_click)
 
     def on_btn_login_click(self):
         user_name = self.user.get()
@@ -90,22 +91,24 @@ class Login_win:
         # Login_logic.login(user_name)
 
     def on_btn_reg_click(self):
-        print(self.user.get())
-        print(self.email.get())
-        print(self.pwd.get())
-
-    def on_btn_reg_click(self):
-        global server_connection
         user_name = self.user.get()
         user_email = self.email.get()
         user_pwd = self.pwd.get()
-        register_dict={
-            "user_name":user_name,
-            "user_pwd":user_pwd,
-            "user_email":user_email
+        client_logic.register(user_name, user_pwd, user_email)
+
+    def on_btn_retre_pwd_click(self):
+        user_name = self.user.get()
+        user_email = self.email.get()
+        user_pwd = self.pwd.get()
+        register_dict = {
+            "user_name": user_name,
+            "user_pwd": user_pwd,
+            "user_email": user_email
         }
 
-        # server_connection.send()
+        client_logic.login()
+
+
 
 
 # 主窗口 -- 文件列表主界面
@@ -238,12 +241,9 @@ class Main_win:
     # -------------------------------------------------------------------------------------------------
 
 
-
-
 class Client_Logic:
-    loginWin=None
+    loginWin = None
     user = User()
-
 
     def __init__(self):
         pass
@@ -258,16 +258,27 @@ class Client_Logic:
         return self.login_win.email
 
     @staticmethod
-    def login(user_name,user_pwd,user_email):
+    def login(user_name, user_pwd, user_email):
         global server_connection
-        data_dict=dict()
-        data_dict={"type":"login",
-                   "user_name":user_name,
-                    "user_pwd":user_pwd,
-                   "user_email":user_email
-                   }
-        server_connection.server_connection.send(data_dict)
+        data_dict = dict()
+        data_dict = {"type": "login",
+                     "user_name": user_name,
+                     "user_pwd": user_pwd,
+                     "user_email": user_email
+                     }
+        server_connection.send(data_dict)
 
+
+    @staticmethod
+    def register(user_name, user_pwd, user_email):
+        global server_connection
+        data_dict = dict()
+        data_dict = {"type": "register",
+                     "user_name": user_name,
+                     "user_pwd": user_pwd,
+                     "user_email": user_email
+                     }
+        server_connection.send(data_dict)
 
     # 接收服务端消息函数
     # 在用户登陆成功后，为其建立的新线程将调用此函数，接收server发送的数据及相关指令标志
@@ -277,22 +288,23 @@ class Client_Logic:
         global server_connection
 
         while True:
-            data = server_connection.recv()        # data为接收到server发送的数据 不同请求（'type'）接收到的消息类型不同
+            data = server_connection.recv()  # data为接收到server发送的数据 不同请求（'type'）接收到的消息类型不同
             if data is None:
                 continue
             if data['type'] == 'operation_msg':
                 if data['response'] == 'ok':
-                    tk.messagebox.showinfo('成功',data['msg'])
+                    messagebox.showinfo('成功', data['msg'])
 
                 elif data['response'] == 'fail':
-                    tk.messagebox.showerror('警告', data['msg'])
+                    messagebox.showerror('警告', data['msg'])
             if data['type'] == 'get_users':
                 users = {}
                 users['广场'] = True
-                for user in data['data']:   #
+                for user in data['data']:  #
                     users[user] = True
 
-server_connection=None
+
+server_connection = None
 
 if __name__ == '__main__':
     # global server_connection
@@ -300,8 +312,7 @@ if __name__ == '__main__':
     client_logic = Client_Logic()
     client_logic.loginWin = Login_win()
     server_connection.connect_to_server(server_ip=CommonUtil.get_server_ip(),
-                                     server_port=CommonUtil.get_server_port(),recv_async=client_logic.recv_async)
-
+                                        server_port=CommonUtil.get_server_port(), recv_async=client_logic.recv_async)
 
     client_logic.loginWin.show()
 
