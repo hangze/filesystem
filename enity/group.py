@@ -1,10 +1,8 @@
-from enity.user import User
+from enity.owner import Owner
 
 
 # 群组，继承自User
-
-
-class Group(User):
+class Group(Owner):
     group_member=[]
 
     def __init__(self, pwd_key: str, user_name: str, user_disk_name: str, user_file_sec_key: str):

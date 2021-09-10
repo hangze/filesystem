@@ -8,9 +8,12 @@ from basiclib import socket_util
 from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher
 
 from basiclib.common_util import CommonUtil
-from server.security_service import SecurityService
+from security_service import SecurityService
+from user_service import UserService
 
-security_service=SecurityService()
+security_service = SecurityService()
+user_service = UserService()
+hanler_dict = dict()
 
 
 class file_server(socketserver.BaseRequestHandler):
@@ -34,31 +37,80 @@ class file_server(socketserver.BaseRequestHandler):
             data = socket_util.recv(self.request, self.aes_key)  # data 为接收到的client所发送的数据字典
             if not self.authed:
                 if data['type'] == 'get_ca_book':
-                    ca_book=security_service.get_ca_book()
+                    ca_book = security_service.get_ca_book()
                     ca_book.update({'response': 'ok'})
                     socket_util.raw_send(self.request, ca_book)
                 elif data['type'] == 'send_aes_key':
                     aes_key_encrypt = data['aes_key']
-
+                    aes_key_decrypt = security_service.decrypt_data(aes_key_encrypt)
+                    self.aes_key = aes_key_decrypt
+                    socket_util.raw_send(self.request, {'response': 'ok', 'reason': '认证成功'})
+                    self.authed = True
                 else:
-                    socket_util.send(self.request,{'response': 'fail', 'reason': '认证失败'})
+                    socket_util.raw_send(self.request, {'response': 'fail', 'reason': '认证失败'})
             else:
-                if data['type'] == 'get_users':
-                    userrrs = []
-                    for user in file_server.clients.keys():  # 所有用户列表中遍历
-                        if user != self.user:  # 若用户不是我的id，就显示在我的在线列表中传过去
-                            userrrs.append(user)
-                    socket_util.send(self.request, {'type': 'get_users', 'data': userrrs},
-                                     self.aes_key)  # 传回client的'data'为用户[]列表
-                # -----------------------------------------------------------------------------------------------------------
-                # 获取好友表
-                # （传到client方之后 1.直接显示于弹出的框体 2.后面追加"*"表示在线好友 在线好友的获得是使用在线总表与好友表取交集）
-                elif data['cmd'] == 'get_friends':
-                    fris = []
-                    for friend in friend_table[self.user]:  # 在我ID对应的好友list中遍历
-                        if friend != self.user:  # 若好友不是我的id，就显示在我的好友表中
-                            fris.append(friend)
-                    socket_util.send(self.request, {'type': 'get_friends', 'data': fris}, self.aes_key)
+
+                if data["type"] == "retrieve_pwd":
+                    user_name = data["user_name"]
+                    user_email = data["user_email"]
+                    try:
+                        user_service.retrive_pwd(user_name=user_name,user_email=user_email)
+                        socket_util.send(self.request, {'response': 'ok', 'msg': '验证码发送成功'}, self.aes_key)
+                    except Exception as e:
+                        socket_util.send(self.request, {'response': 'fail', 'msg': str(e.message)}, self.aes_key)
+
+                elif data["type"] == "retrieve_pwd_code":
+                    user_name = data["user_name"]
+                    user_email = data["user_email"]
+                    user_new_pwd=data["user_new_pwd"]
+                    user_verify_code=data["user_verify_code"]
+                    try:
+                        user_service.retrive_pwd_verify(user_name=user_name, user_email=user_email,user_verify_code=user_verify_code)
+                        socket_util.send(self.request, {'response': 'ok', 'msg': '密码重置成功'}, self.aes_key)
+                    except Exception as e:
+                        socket_util.send(self.request, {'response': 'fail', 'msg': str(e.message)}, self.aes_key)
+
+
+                elif data["type"] == "register":
+                    user_name = data["user_name"]
+                    user_pwd = data["user_pwd"]
+                    user_email=data["user_email"]
+                    try:
+                        user_service.register(user_name=user_name, user_pwd=user_pwd, user_email=user_email)
+                        socket_util.send(self.request, {'response': 'ok','msg': '注册成功'}, self.aes_key)
+                    except Exception as e:
+                        socket_util.send(self.request, {'response': 'fail', 'msg': '注册失败'}, self.aes_key)
+                elif data["type"] == "login":
+                    user_name = data["user_name"]
+                    user_pwd = data["user_pwd"]
+                    try:
+                        token = user_service.login(user_name, user_pwd)
+                        socket_util.send(self.request, {'response': 'ok', 'token': token, 'msg': '认证成功'}, self.aes_key)
+                    except Exception as e:
+                        socket_util.send(self.request, {'response': 'fail', 'msg': '认证失败'}, self.aes_key)
+                        # -----------------------------------------------------------------------------------------------------------
+                elif data['token'] == '':
+                    socket_util.send(self.request, {'type': 'operation_msg', 'msg': "请登录"}, self.aes_key)
+                else:
+                    # 验证token是否有效
+                    if user_service.is_login(token):
+                        pass
+                        # if data["type"] ="":
+                        #     hanler_dict[data["type"]](data)
+                        # elif data["type"] ="":
+                        #     pass
+                        # elif data["type"] ="":
+                        #     pass
+                        # elif data["type"] ="":
+                        #     pass
+                        # elif data["type"] ="":
+                        #     pass
+                        # elif data["type"] ="":
+                        #     pass
+                        # elif data["type"] ="":
+                        #     pass
+                    else:
+                        socket_util.send(self.request, {'type': 'operation_msg', 'msg': "token无效，请重新登录"}, self.aes_key)
 
     def finish(self):
         if self.authed:
@@ -71,7 +123,8 @@ class file_server(socketserver.BaseRequestHandler):
 
 
 def handler_init():
-    pass
+    global hanler_dict
+    # hanler_dict["get_file_list"] =
 
 
 if __name__ == '__main__':

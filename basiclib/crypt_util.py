@@ -75,11 +75,24 @@ def decrypt(data, key):
         real_data = img_data
         return AES.new(key, AES.MODE_CFB, real_data[:16]).decrypt(real_data[16:])
 
+#获取文件的md5码
+def get_file_md5(file_path):
+    md5obj = hashlib.md5()
+    maxbuf = 8192
+    f = open(file_path, 'rb')
+    while True:
+        buf = f.read(maxbuf)
+        if not buf:
+            break
+        md5obj.update(buf)
+    f.close()
+    hash = md5obj.hexdigest()
+    return str(hash).upper()
 
 # 使用python自带的hashlib库
 def get_md5_value(str):
     my_md5 = hashlib.md5()  # 获取一个MD5的加密算法对象
-    my_md5.update(str)  # 得到MD5消息摘要
+    my_md5.update(str.encode("utf-8"))  # 得到MD5消息摘要
     my_md5_Digest = my_md5.hexdigest()  # 以16进制返回消息摘要，32位
     return my_md5_Digest
 
@@ -108,6 +121,6 @@ def verify_signture(data_dict, crypt_hash, ca_public_key: str):
     public_cipher = PKCS1_cipher.new(RSA.importKey(ca_public_key))
     decrypt_hash = public_cipher.decrypt(base64.b64decode(crypt_hash), 0)
 
-    if data_hash == decrypt_hash:
+    if data_hash == str(decrypt_hash,encoding="utf-8"):
         return True
     return False

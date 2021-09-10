@@ -20,14 +20,16 @@ from tkinter import ttk
 
 
 class Login_win:
-
+    server_connection = None
     def show(self):
         self.win.mainloop()  # 接收操作系统发来的事件，然后把事件分发给各个控件和窗体
 
     def destroy(self):
         self.win.destroy()
 
-    def __init__(self):
+    def __init__(self,server_connection):
+        self.server_connection=server_connection
+
         self.win = tk.Tk()  # 窗口
         self.user = tk.StringVar()  # 用户名输入框
         self.email = tk.StringVar()  # 邮箱输入框
@@ -41,6 +43,7 @@ class Login_win:
         self.img_tk = None
         self.canvas = tk.Canvas(self.win, width=320, height=240)
         img = Image.open('../bg.jpg').resize((320, 240))
+        # img = tkinter.PhotoImage(file ='../bg.jpg').resize((320, 240))
         self.img_tk = ImageTk.PhotoImage(img)
         self.canvas.create_image(160, 120, image=self.img_tk)
         self.canvas.pack()
@@ -83,18 +86,32 @@ class Login_win:
         self.btn_reg.place(relx=0.6, rely=0.65, height=32, width=88)  # 规定显示框位置以及大小
         self.btn_reg.configure(text='注册')  # 显示注册按钮
 
-        def on_btn_login_click():
-            print(self.user.get())
-            print(self.email.get())
-            print(self.pwd.get())
+        # 创建注册按钮
+        self.btn_reg = tk.Button(self.win, font=('宋体', 11))
+        self.btn_reg.place(relx=0.13, rely=0.85, height=32, width=88)  # 规定显示框位置以及大小
+        self.btn_reg.configure(text='密码找回')  # 显示注册按钮
 
-        def on_btn_reg_click():
-            print(self.user.get())
-            print(self.email.get())
-            print(self.pwd.get())
+        self.btn_login.configure(command=self.on_btn_login_click)
+        self.btn_reg.configure(command=self.on_btn_reg_click())
 
-        self.btn_login.configure(command=on_btn_login_click)
-        self.btn_reg.configure(command=on_btn_reg_click)
+    def on_btn_login_click(self):
+        user_name = self.user.get()
+        user_email = self.email.get()
+        user_pwd = self.pwd.get()
+        # Login_logic.login(user_name)
+
+    def on_btn_reg_click(self):
+        print(self.user.get())
+        print(self.email.get())
+        print(self.pwd.get())
+
+    def on_btn_reg_click(self):
+        print(self.user.get())
+        print(self.email.get())
+        print(self.pwd.get())
+
+
+
 
 # 主窗口 -- 文件列表主界面
 class Main_win:
@@ -198,7 +215,8 @@ class Main_win:
         self.btn_download = tk.Button(self.win)
         self.btn_download.place(relx=0.752, rely=0.89, height=28, width=108)
         self.btn_download.configure(text='下载文件')
-        #self.btn_download.configure(state='disabled')
+
+        # self.btn_download.configure(state='disabled')
 
         def on_btn_myspace_click():
             print('successfully')
