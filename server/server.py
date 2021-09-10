@@ -9,10 +9,12 @@ from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher
 
 from basiclib.common_util import CommonUtil
 from security_service import SecurityService
+from file_service import FileService
 from user_service import UserService
 
 security_service = SecurityService()
 user_service = UserService()
+file_service = FileService()
 hanler_dict = dict()
 
 
@@ -53,34 +55,43 @@ class file_server(socketserver.BaseRequestHandler):
 
                 if data["type"] == "retrieve_pwd":
                     user_name = data["user_name"]
-                    user_email = data["user_email"]
                     try:
-                        user_service.retrive_pwd(user_name=user_name,user_email=user_email)
-                        socket_util.send(self.request, {'response': 'ok', 'msg': '验证码发送成功'}, self.aes_key)
+                        user_email = user_service.get_user_email(user_name)
+                        user_service.retrive_pwd(user_name=user_name, user_email=user_email)
+                        socket_util.send(self.request, {'type': 'retrieve_pwd_rsp', 'response': 'ok', 'msg': '验证码发送成功'},
+                                         self.aes_key)
                     except Exception as e:
-                        socket_util.send(self.request, {'response': 'fail', 'msg': str(e.message)}, self.aes_key)
+                        socket_util.send(self.request,
+                                         {'type': 'retrieve_pwd_rsp', 'response': 'fail', 'msg': str(e)},
+                                         self.aes_key)
 
                 elif data["type"] == "retrieve_pwd_code":
                     user_name = data["user_name"]
                     user_email = data["user_email"]
-                    user_new_pwd=data["user_new_pwd"]
-                    user_verify_code=data["user_verify_code"]
+                    user_new_pwd = data["user_new_pwd"]
+                    user_verify_code = data["user_verify_code"]
                     try:
-                        user_service.retrive_pwd_verify(user_name=user_name, user_email=user_email,user_verify_code=user_verify_code)
-                        socket_util.send(self.request, {'response': 'ok', 'msg': '密码重置成功'}, self.aes_key)
+                        user_service.retrive_pwd_verify(user_name=user_name, user_email=user_email,
+                                                        user_verify_code=user_verify_code)
+                        socket_util.send(self.request, {'type': 'operation_msg', 'response': 'ok', 'msg': '密码重置成功'},
+                                         self.aes_key)
                     except Exception as e:
-                        socket_util.send(self.request, {'response': 'fail', 'msg': str(e.message)}, self.aes_key)
+                        socket_util.send(self.request,
+                                         {'type': 'operation_msg', 'response': 'fail', 'msg': str(e.message)},
+                                         self.aes_key)
 
 
                 elif data["type"] == "register":
                     user_name = data["user_name"]
                     user_pwd = data["user_pwd"]
-                    user_email=data["user_email"]
+                    user_email = data["user_email"]
                     try:
                         user_service.register(user_name=user_name, user_pwd=user_pwd, user_email=user_email)
-                        socket_util.send(self.request, {'type':'operation_msg','response': 'ok','msg': '注册成功'}, self.aes_key)
+                        socket_util.send(self.request, {'type': 'operation_msg', 'response': 'ok', 'msg': '注册成功'},
+                                         self.aes_key)
                     except Exception as e:
-                        socket_util.send(self.request, {'type':'operation_msg','response': 'fail', 'msg': '注册失败'}, self.aes_key)
+                        socket_util.send(self.request, {'type': 'operation_msg', 'response': 'fail', 'msg': '注册失败'},
+                                         self.aes_key)
                         raise e
                         print(e)
 
@@ -89,30 +100,24 @@ class file_server(socketserver.BaseRequestHandler):
                     user_pwd = data["user_pwd"]
                     try:
                         token = user_service.login(user_name, user_pwd)
-                        socket_util.send(self.request, {'type':'login_result','response': 'ok', 'token': token, 'msg': '认证成功'}, self.aes_key)
+                        socket_util.send(self.request,
+                                         {'type': 'login_result', 'response': 'ok', 'token': token, 'msg': '认证成功'},
+                                         self.aes_key)
                     except Exception as e:
-                        socket_util.send(self.request, {'type':'login_result','response': 'fail', 'msg': '认证失败'}, self.aes_key)
+                        socket_util.send(self.request, {'type': 'login_result', 'response': 'fail', 'msg': '认证失败'},
+                                         self.aes_key)
                         # -----------------------------------------------------------------------------------------------------------
                 elif data['token'] == '':
                     socket_util.send(self.request, {'type': 'operation_msg', 'msg': "请登录"}, self.aes_key)
                 else:
                     # 验证token是否有效
                     if user_service.is_login(token):
-                        pass
-                        # if data["type"] ="":
-                        #     hanler_dict[data["type"]](data)
-                        # elif data["type"] ="":
-                        #     pass
-                        # elif data["type"] ="":
-                        #     pass
-                        # elif data["type"] ="":
-                        #     pass
-                        # elif data["type"] ="":
-                        #     pass
-                        # elif data["type"] ="":
-                        #     pass
-                        # elif data["type"] ="":
-                        #     pass
+                        if data["type"] == "get_my_space":
+                            user_name = data["user_name"]
+                            file_list = file_service.ger_user_file_list(user_name)
+                            socket_util.send(self.request,
+                                             {'type': 'get_my_space_rsp', 'file_list': file_list, 'response': 'ok'},
+                                             self.aes_key)
                     else:
                         socket_util.send(self.request, {'type': 'operation_msg', 'msg': "token无效，请重新登录"}, self.aes_key)
 
@@ -130,8 +135,6 @@ def handler_init():
 
 if __name__ == '__main__':
     # 服务端每次运行时，加载用户列表、群组列表
-    # todo
-
     # 接收新客户端的连接请求，递交其IP及端口号至Handler函数，建立线程
     server_port = CommonUtil.get_server_port()
     app = socketserver.ThreadingTCPServer(('0.0.0.0', server_port), file_server)

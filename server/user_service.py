@@ -75,7 +75,7 @@ class UserService:
         self.save_user_dict()
 
     def retrive_pwd(self, user_name, user_email):
-        verify_code = str(time.time() % 1000000)
+        verify_code = str(time.time_ns() % 1000000)
         main_server = MailServer()
         main_server.send_verify_mail(verify_code=verify_code, des_mail_addr=user_email)
         self.user_name_verify_code.update({user_name: verify_code})
@@ -87,3 +87,10 @@ class UserService:
                 self.save_user_dict()
                 return True
         raise Exception("验证失败")
+
+    def get_user_email(self,user_name):
+        if user_name in self.user_dict:
+            user_email=self.user_dict[user_name].user_email
+            return user_email
+        raise Exception("用户名不存在")
+

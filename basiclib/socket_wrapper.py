@@ -113,6 +113,7 @@ class SocketConnect:
         try:
             return recv(self.socket, self.aes_key)
         except Exception as e:
+            raise e
             print(e)
 
     def raw_recv(self):

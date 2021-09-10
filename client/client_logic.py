@@ -1,5 +1,6 @@
 import tkinter as tk
 import tkinter.messagebox
+import queue as Queue
 from tkinter import messagebox
 from tkinter.ttk import Treeview
 
@@ -12,6 +13,24 @@ from enity.user import User
 
 
 class Login_win:
+    msg_queue = None  # 创建一个队列
+
+    def handee(self, root):
+        # 把队列中的内容取出赋值给label控件
+        mpica = self.msg_queue.empty()  # 检查队列是否为空
+        if (mpica == False):
+            ontad = self.msg_queue.get()
+            if (ontad == "file_win"):
+
+                self.destroy()
+                client_logic.main_win = Main_Win()
+                client_logic.main_win.show()
+
+            elif ontad == "file_win":
+                pass
+
+        root.after(500, self.handee, root)  # 递归调用实现循环，TKinter UI线程中无法使用传统的while循环只能用它这个自带的函数递归实现循环
+
     def show(self):
         self.win.mainloop()  # 接收操作系统发来的事件，然后把事件分发给各个控件和窗体
 
@@ -19,6 +38,7 @@ class Login_win:
         self.win.destroy()
 
     def __init__(self):
+        self.msg_queue = Queue.Queue()  # 创建一个队列
         self.win = tk.Tk()  # 窗口
         self.user = tk.StringVar()  # 用户名输入框
         self.email = tk.StringVar()  # 邮箱输入框
@@ -82,7 +102,9 @@ class Login_win:
 
         self.btn_login.configure(command=self.on_btn_login_click)
         self.btn_reg.configure(command=self.on_btn_reg_click)
-        self.btn_retre_pwd.configure(command=self.on_btn_reg_click)
+        self.btn_retre_pwd.configure(command=self.on_btn_retri_pwd_click)
+
+        self.win.after(100, self.handee, self.win)
 
     def on_btn_login_click(self):
         user_name = self.user.get()
@@ -97,17 +119,12 @@ class Login_win:
         user_pwd = self.pwd.get()
         client_logic.register(user_name, user_pwd, user_email)
 
-    def on_btn_retre_pwd_click(self):
+    def on_btn_retri_pwd_click(self):
         user_name = self.user.get()
         user_email = self.email.get()
         user_pwd = self.pwd.get()
-        register_dict = {
-            "user_name": user_name,
-            "user_pwd": user_pwd,
-            "user_email": user_email
-        }
 
-        client_logic.login()
+        client_logic.retrieve_pwd(user_name, user_email)
 
 
 # 主窗口 -- 文件列表主界面
@@ -127,7 +144,8 @@ class Main_Win:
     def __init__(self):
 
         self.win = tk.Tk()  # 窗口
-        # self.win =tk.Toplevel()
+        # self.win.focus_force()  # 新窗口获得焦点
+        # self.win = tk.Toplevel()
         self.win.protocol('WM_DELETE_WINDOW', self.destroy)  # 关闭之前的窗口
         self.win.geometry("480x320")  # 主窗体长*宽
         self.win.title("磁盘空间")  # 主窗体标题
@@ -137,14 +155,8 @@ class Main_Win:
         # self.name = tk.StringVar()  # 显示用户名
         # self.lsb_option = tk.IntVar() #隐写按钮
 
-        self.win.tree = Treeview(show="tree")  # 定义列的名称
-        self.win.tree.place(x=25, y=20, relheight=0.8, relwidth=0.5)
-
-        self.my_id = self.win.tree.insert("", 0, "中国", text="中国China", values="1")  # ""表示父节点是根
-        self.my_idx1 = self.win.tree.insert(self.my_id, 0, "广东", text="中国广东", values="2")  # text表示显示出的文本，values是隐藏的值
-        self.my_idx2 = self.win.tree.insert(self.my_id, 1, "江苏", text="中国江苏", values="3")
-        self.my_idy = self.win.tree.insert("", 1, "美国", text="美国USA", values="4")
-        self.my_idy1 = self.win.tree.insert(self.my_idy, 0, "加州", text="美国加州", values="5")
+        self.win.tree = Treeview(master=self.win, show="tree")  # 定义列的名称
+        self.win.tree.place(relx=0.05, rely=0.05, relheight=0.8, relwidth=0.5)
 
         # 鼠标选中一行回调
         def select_tree(event):
@@ -216,7 +228,7 @@ class Main_Win:
         # self.btn_download.configure(state='disabled')
 
         def on_btn_myspace_click():
-            print('successfully')
+            client_logic.get_my_space()
 
         def on_btn_add_group_click():
             print(self.group_name.get())
@@ -226,6 +238,7 @@ class Main_Win:
             print(self.win.tree.item(self.win.tree.focus()))
 
         def on_btn_download_click():
+            print(self.win.tree.item(self.win.tree.focus()))
             print(self.win.tree.focus())
             print('successfully')
 
@@ -237,12 +250,18 @@ class Main_Win:
         # self.C1 = tk.Checkbutton(self.win, text="开启lsb隐写", variable=self.lsb_option,  onvalue = 1, offvalue = 0)
         # self.C1.place(relx=0.01, rely=0.01, height=57, width=140)
 
+    def show_file_list(self, file_dict: dict):
+        i = 0
+        for key in file_dict.keys():
+            self.win.tree.insert("", 0, file_dict[key], text=key, values=i)
+            i = i + 1
+
     # -------------------------------------------------------------------------------------------------
 
 
 class Client_Logic:
     login_win = None
-    main_win=None
+    main_win = None
     user = User()
 
     def __init__(self):
@@ -284,11 +303,30 @@ class Client_Logic:
                      }
         server_connection.send(data_dict)
 
+    @staticmethod
+    def retrieve_pwd(user_name, user_email):
+        global server_connection
+        data_dict = dict()
+        data_dict = {"type": "retrieve_pwd",
+                     "user_name": user_name,
+                     "user_email": user_email
+                     }
+        server_connection.send(data_dict)
+
+    def get_my_space(self):
+        global server_connection
+        data_dict = dict()
+        data_dict = {"type": "get_my_space",
+                     "user_name": server_connection.user.user_name,
+                     "token": server_connection.user.user_token
+                     }
+        server_connection.send(data_dict)
+
     # 接收服务端消息函数
     # 在用户登陆成功后，为其建立的新线程将调用此函数，接收server发送的数据及相关指令标志
     # 通过标志，在if-else判断逻辑下，实现本机一系列请求后收到应答的处理
-    # @staticmethod
-    def recv_async(self):
+    @staticmethod
+    def recv_async():
         global server_connection
 
         while True:
@@ -307,12 +345,31 @@ class Client_Logic:
                     server_connection.user.user_token = data['token']
                     messagebox.showinfo('成功', data['msg'])
 
-                    # self.login_win.destroy()
-                    self.main_win = Main_Win()
-                    self.main_win.show()
+                    client_logic.login_win.msg_queue.put("file_win")
+                    # client_logic.main_win = Main_Win()
+                    # client_logic.main_win.show()
+                    # client_logic.login_win.withdraw()
+                    # client_logic.main_win.show()
                 elif data['response'] == 'fail':
                     server_connection.user = User()
                     messagebox.showerror('警告', data['msg'])
+
+            elif data['type'] == 'retrieve_pwd_rsp':
+                if data['response'] == 'ok':
+                    server_connection.user.user_token = data['token']
+                    messagebox.showinfo('成功', data['msg'])
+                elif data['response'] == 'fail':
+                    server_connection.user = User()
+                    messagebox.showerror('警告', data['msg'])
+            elif data['type'] == 'get_my_space_rsp':
+                if data['response'] == 'ok':
+                    file_dict = data['file_list']
+                    client_logic.main_win.show_file_list(file_dict)
+
+                elif data['response'] == 'fail':
+                    server_connection.user = User()
+                    messagebox.showerror('警告', data['msg'])
+
             if data['type'] == 'get_users':
                 users = {}
                 users['广场'] = True
@@ -321,15 +378,16 @@ class Client_Logic:
 
 
 server_connection = None
+client_logic = None
 
 if __name__ == '__main__':
     # global server_connection
     server_connection = SocketConnect()
     client_logic = Client_Logic()
     client_logic.login_win = Login_win()
+    # client_logic.main_win=Main_Win()
     server_connection.connect_to_server(server_ip=CommonUtil.get_server_ip(),
                                         server_port=CommonUtil.get_server_port(), recv_async=client_logic.recv_async)
-
     client_logic.login_win.show()
 
 
