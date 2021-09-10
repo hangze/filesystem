@@ -1,6 +1,7 @@
 #
 import base64
 import socket
+import threading
 import tkinter
 
 import utils
@@ -11,6 +12,7 @@ from basiclib.common_util import CommonUtil
 from basiclib.crypt_util import verify_signture, keyGenerater
 # import * from socket_util
 from basiclib.socket_util import raw_send, recv, raw_recv, send
+from enity.user import User
 
 
 class SocketConnect:
@@ -22,14 +24,9 @@ class SocketConnect:
         self.max_buff_size = 1024  # 单次最大传输数据大小
         self.aes_key = b''  # 会话密钥，本地生成
 
-    def connect_to_server(self, server_ip, server_port):
+    def connect_to_server(self, server_ip, server_port,recv_async):
         try:
             self.socket.connect((server_ip, int(server_port)))
-            # 客户端生成私钥
-            # aes_key = keyGenerater(16)
-            # self.aes_key = aes_key.encode()
-            # cipher = PKCS1_cipher.new(self.server_public_key)
-            # encrypt_aes_key = base64.b64encode(cipher.encrypt(bytes(aes_key.encode("utf8"))))
 
             self.raw_send({'type': 'get_ca_book'})
             server_response = self.recv()
@@ -53,6 +50,8 @@ class SocketConnect:
                     aes_response = self.recv()
                     if aes_response['response'] == 'ok':
                         print("与服务端交换密钥完成")
+                        #建立连接成功，client开始监听来自服务端数据
+                        self.start_listen(recv_async=recv_async)
                     else:
                         print("与服务端交换密钥失败")
                         raise Exception("与服务端交换密钥失败")
@@ -65,9 +64,16 @@ class SocketConnect:
                 self.close_socket()
         except Exception as e:
             print(e.__str__())
-            # tkinter.messagebox.showerror('警告', e.__str__())
+            tkinter.messagebox.showerror('警告', e.__str__())
             raise e
             self.close_socket()
+
+
+    def start_listen(self,recv_async):
+        t1 = threading.Thread(target=recv_async, args=())  # 为登陆成功的用户创建一个新线程，target为线程执行的函数，
+        t1.setDaemon(True)  # 设置：主线程server结束后，子线程（已登录的client用户线程）立即结束
+        t1.start()  # 启动该线程
+
 
     def p2p_connect(self, server_ip, server_port, private_key):
         self.socket.connect((server_ip, int(server_port)))

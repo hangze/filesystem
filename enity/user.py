@@ -4,9 +4,13 @@ from enity.owner import Owner
 
 class User(Owner):
     user_group = list()
+    user_token=None
 
     def __init__(self, pwd_key: str, user_name: str, user_email, user_disk_name: str, user_file_sec_key: str):
         super().__init__()
+
+    def __init__(self):
+        pass
 
     def add_group(self, group_name):
         if group_name not in self.user_group:
