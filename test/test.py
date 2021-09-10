@@ -1,7 +1,6 @@
 from Crypto import Random
 from Crypto.PublicKey import RSA
 
-from basiclib.common_util import get_base_disk_dir
 from basiclib.mail_util import MailServer
 import smtplib
 from email.mime.text import MIMEText

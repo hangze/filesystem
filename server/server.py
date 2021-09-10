@@ -41,7 +41,7 @@ class file_server(socketserver.BaseRequestHandler):
                     ca_book.update({'response': 'ok'})
                     socket_util.raw_send(self.request, ca_book)
                 elif data['type'] == 'send_aes_key':
-                    aes_key_encrypt = data['aes_key']
+                    aes_key_encrypt = data['aes_key_encrypt']
                     aes_key_decrypt = security_service.decrypt_data(aes_key_encrypt)
                     self.aes_key = aes_key_decrypt
                     socket_util.raw_send(self.request, {'response': 'ok', 'reason': '认证成功'})

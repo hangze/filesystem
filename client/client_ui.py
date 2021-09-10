@@ -18,9 +18,11 @@ from Crypto.PublicKey import RSA
 from PIL import Image, ImageTk
 from tkinter import ttk
 
+from basiclib.socket_wrapper import SocketConnect
+
 
 class Login_win:
-    server_connection = None
+    server_connection = SocketConnect()
     def show(self):
         self.win.mainloop()  # 接收操作系统发来的事件，然后把事件分发给各个控件和窗体
 
@@ -106,9 +108,16 @@ class Login_win:
         print(self.pwd.get())
 
     def on_btn_reg_click(self):
-        print(self.user.get())
-        print(self.email.get())
-        print(self.pwd.get())
+        user_name = self.user.get()
+        user_email = self.email.get()
+        user_pwd = self.pwd.get()
+        register_dict={
+            "user_name":user_name,
+            "user_pwd":user_pwd,
+            "user_email":user_email
+        }
+
+        self.server_connection.send()
 
 
 

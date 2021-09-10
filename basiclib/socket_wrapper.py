@@ -5,6 +5,7 @@ import tkinter
 
 import utils
 from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher
+from Crypto.PublicKey import RSA
 
 from basiclib.common_util import CommonUtil
 from basiclib.crypt_util import verify_signture, keyGenerater
@@ -45,9 +46,10 @@ class SocketConnect:
                     # 客户端生成私钥
                     aes_key = keyGenerater(16)
                     self.aes_key = aes_key.encode()
-                    cipher = PKCS1_cipher.new(self.server_public_key)
+                    pub_key = RSA.importKey(self.server_public_key)
+                    cipher = PKCS1_cipher.new(pub_key)
                     aes_key_encrypt = base64.b64encode(cipher.encrypt(bytes(aes_key.encode("utf8"))))
-                    self.raw_send({'type': 'send_aes_key', 'aes_key': aes_key_encrypt})
+                    self.raw_send({'type': 'send_aes_key', 'aes_key_encrypt': aes_key_encrypt.decode()})
                     aes_response = self.recv()
                     if aes_response['response'] == 'ok':
                         print("与服务端交换密钥完成")
@@ -63,7 +65,7 @@ class SocketConnect:
                 self.close_socket()
         except Exception as e:
             print(e.__str__())
-            tkinter.messagebox.showerror('警告', e.__str__())
+            # tkinter.messagebox.showerror('警告', e.__str__())
             raise e
             self.close_socket()
 
