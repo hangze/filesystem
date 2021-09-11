@@ -1,12 +1,23 @@
+import os
+import queue as Queue
+import threading
 import tkinter as tk
 import tkinter.messagebox
-import queue as Queue
+from datetime import time
+
+import time as timer
+from socket import socket
 from tkinter import messagebox
+from tkinter.filedialog import askopenfilename
+from tkinter.simpledialog import askstring
 from tkinter.ttk import Treeview
 
 from PIL import Image, ImageTk
 
+from basiclib import socket_util, crypt_util
 from basiclib.common_util import CommonUtil
+from basiclib.crypt_util import get_file_md5
+from basiclib.file_service import FileService
 from basiclib.socket_wrapper import SocketConnect
 # from client_ui import Login_win, Main_win
 from enity.user import User
@@ -130,6 +141,8 @@ class Login_win:
 # 主窗口 -- 文件列表主界面
 class Main_Win:
     closed_fun = None  # 初始化closed_fun
+    is_group_space=False
+    group_name_cache=""
 
     def show(self):
         self.win.mainloop()  # 接收操作系统发来的事件，然后把事件分发给各个控件和窗体
@@ -171,14 +184,12 @@ class Main_Win:
 
         # 鼠标双击选中一行回调
         def change_group(event):
-            print("got it")
-            print(self.group_list.get(self.group_list.curselection()))
+            group_name_cache = str(self.group_list.get(self.group_list.curselection()))
+            self.group_name_cache =group_name_cache
+            self.is_group_space=True
+            client_logic.get_group_space(group_name_cache)
 
         self.group_list.bind(sequence='<Double-Button>', func=change_group)  # 双击切换群组
-
-        self.group_list.insert(1, "fi")
-        self.group_list.insert(2, "huang")
-        self.group_list.insert(3, "ze")
 
         self.group_name = tk.StringVar()  # 群组输入框
         self.group_code = tk.StringVar()  # 群组邀请码输入框
@@ -195,7 +206,7 @@ class Main_Win:
         # 标签 群组邀请码
         self.label_code = tk.Label(self.win, bg="#00FFFF", font=('宋体', 11))
         self.label_code.place(relx=0.62, rely=0.68, height=28, width=54)  # 规定显示框位置以及大小
-        self.label_code.configure(text='邀请码')  # 在输入框前显示”群组名称“两字引导用户输入
+        self.label_code.configure(text='群组Key')  # 在输入框前显示”群组名称“两字引导用户输入
 
         self.entry_code = tk.Entry(self.win)
         self.entry_code.place(relx=0.75, rely=0.68, height=26, relwidth=0.23)  # 规定显示框位置以及大小
@@ -210,8 +221,8 @@ class Main_Win:
         self.btn_myspace.configure(text='我的空间')
 
         self.btn_add_group = tk.Button(self.win)
-        self.btn_add_group.place(relx=0.75, rely=0.78, height=28, width=80)
-        self.btn_add_group.configure(text='添加群组')
+        self.btn_add_group.place(relx=0.75, rely=0.78, height=28, width=110)
+        self.btn_add_group.configure(text='添加群组(默认注册)')
 
         self.btn_upload = tk.Button(self.win)
         self.btn_upload.place(relx=0.5, rely=0.89, height=28, width=108)
@@ -228,19 +239,29 @@ class Main_Win:
         # self.btn_download.configure(state='disabled')
 
         def on_btn_myspace_click():
+            self.is_group_space=False
+            self.group_name_cache=""
             client_logic.get_my_space()
 
         def on_btn_add_group_click():
-            print(self.group_name.get())
-            print(self.group_code.get())
+            group_name = self.group_name.get()
+            group_key = self.group_code.get()
+            client_logic.add_group(group_name, group_key)
 
         def on_btn_upload_click():
             print(self.win.tree.item(self.win.tree.focus()))
+            file_path = askopenfilename()  # 选择打开什么文件，返回文件名
+            file_name = os.path.basename(file_path)
+            file_md5 = get_file_md5(file_path)
+            client_logic.upload_file(file_path, file_name, file_md5,self.is_group_space,self.group_name_cache)
 
         def on_btn_download_click():
-            print(self.win.tree.item(self.win.tree.focus()))
-            print(self.win.tree.focus())
-            print('successfully')
+            file_path = self.win.tree.focus()
+            file_name = self.win.tree.item(self.win.tree.focus())["text"]
+            file_md5 = ""
+            if file_name=="" or file_path=="":
+                messagebox.showerror("警告","文件未选择")
+            client_logic.download_file(file_path, file_name, file_md5)
 
         self.btn_myspace.configure(command=on_btn_myspace_click)
         self.btn_add_group.configure(command=on_btn_add_group_click)
@@ -251,11 +272,25 @@ class Main_Win:
         # self.C1.place(relx=0.01, rely=0.01, height=57, width=140)
 
     def show_file_list(self, file_dict: dict):
+        self.win.tree.delete(*self.win.tree.get_children())
         i = 0
+        if not file_dict:
+            return
         for key in file_dict.keys():
             self.win.tree.insert("", 0, file_dict[key], text=key, values=i)
             i = i + 1
 
+    def show_group_list(self, group_list: list):
+        self.group_list.delete(0, 'end')
+        i = 1
+        for group in group_list:
+            self.group_list.insert(i, group)
+            i = i + 1
+
+    def delButton(self):
+        x = self.win.tree.get_children()
+        for item in x:
+            self.win.tree.delete(item)
     # -------------------------------------------------------------------------------------------------
 
 
@@ -313,6 +348,66 @@ class Client_Logic:
                      }
         server_connection.send(data_dict)
 
+    @staticmethod
+    def retrieve_pwd_verify_code(user_name,new_pwd, verify_code):
+        global server_connection
+        data_dict = dict()
+        data_dict = {"type": "retrieve_pwd_verify_code",
+                     "user_name": user_name,
+                     "new_pwd":new_pwd,
+                     "verify_code": verify_code
+                     }
+        server_connection.send(data_dict)
+
+    def download_file(self, file_path, file_name, file_md5):
+        user_name = server_connection.user.user_name
+        token = server_connection.user.user_token
+        tmp_aes_key = crypt_util.keyGenerater(16)
+        data_dict = dict()
+        net_port = 1234
+        base_dir = CommonUtil.get_base_disk_dir()
+        data_dict = {"type": "download_file",
+                     "user_name": user_name,
+                     "token": token,
+                     "file_path": file_path,
+                     "file_name": file_name,
+                     "aes_key": tmp_aes_key,
+                     "net_port": net_port}
+        server_connection.send(data_dict)
+        FileService.listen_download_file(net_port, tmp_aes_key, base_dir + "\\" + file_name, file_name, file_md5)
+
+    def upload_file(self, file_local_path, file_name, file_md5,is_group_space=False,group_name=""):
+        user_name = server_connection.user.user_name
+        token = server_connection.user.user_token
+        tmp_aes_key = crypt_util.keyGenerater(16)
+        net_ip = server_connection.socket.getpeername()
+        data_dict = dict()
+        net_port = 1234
+        data_dict = {"type": "upload_file",
+                     "user_name": user_name,
+                     "token": token,
+                     "file_path": "",
+                     "file_name": file_name,
+                     "aes_key": tmp_aes_key,
+                     "net_port": net_port,
+                     "file_md5": file_md5,
+                     "is_group_space":is_group_space,
+                     "group_name":group_name}
+        server_connection.send(data_dict)
+
+        FileService.upload_file(net_ip[0], net_port, tmp_aes_key, file_local_path)
+
+    def add_group(self, group_name, group_key):
+        user_name = server_connection.user.user_name
+        token = server_connection.user.user_token
+        data_dict = dict()
+        data_dict = {"type": "add_group",
+                     "user_name": user_name,
+                     "token": token,
+                     "group_name": group_name,
+                     "group_key": group_key}
+        server_connection.send(data_dict)
+
     def get_my_space(self):
         global server_connection
         data_dict = dict()
@@ -321,6 +416,37 @@ class Client_Logic:
                      "token": server_connection.user.user_token
                      }
         server_connection.send(data_dict)
+
+    def get_group_space(self,group_name):
+        global server_connection
+        data_dict = dict()
+        data_dict = {"type": "get_group_space",
+                     "user_name": server_connection.user.user_name,
+                     "group_name":group_name,
+                     "token": server_connection.user.user_token
+                     }
+        server_connection.send(data_dict)
+
+    def get_my_group(self):
+        global server_connection
+        data_dict = dict()
+        data_dict = {"type": "get_my_group",
+                     "user_name": server_connection.user.user_name,
+                     "token": server_connection.user.user_token
+                     }
+        server_connection.send(data_dict)
+
+    def update_info(self):
+        timer.sleep(5)
+        while True:
+            self.get_my_group()
+            # self.get_my_space()
+            timer.sleep(3)
+
+    def start_update_info(self):
+        t2 = threading.Thread(target=self.update_info, args=())  # 为登陆成功的用户创建一个新线程，target为线程执行的函数，
+        t2.setDaemon(True)  # 设置：主线程server结束后，子线程（已登录的client用户线程）立即结束
+        t2.start()  # 启动该线程
 
     # 接收服务端消息函数
     # 在用户登陆成功后，为其建立的新线程将调用此函数，接收server发送的数据及相关指令标志
@@ -344,20 +470,26 @@ class Client_Logic:
                 if data['response'] == 'ok':
                     server_connection.user.user_token = data['token']
                     messagebox.showinfo('成功', data['msg'])
-
                     client_logic.login_win.msg_queue.put("file_win")
-                    # client_logic.main_win = Main_Win()
-                    # client_logic.main_win.show()
-                    # client_logic.login_win.withdraw()
-                    # client_logic.main_win.show()
+                    timer.sleep(1)
+                    client_logic.start_update_info()
+                    print("d")
                 elif data['response'] == 'fail':
                     server_connection.user = User()
                     messagebox.showerror('警告', data['msg'])
 
             elif data['type'] == 'retrieve_pwd_rsp':
                 if data['response'] == 'ok':
-                    server_connection.user.user_token = data['token']
+                    user_name = data['user_name']
                     messagebox.showinfo('成功', data['msg'])
+                    # 获取字符串（标题，提示，初始值）
+                    newWin = tk.Tk()
+                    newWin.withdraw()
+                    # retVal = simpledialog.askstring("Enter Value", "Please enter a value", parent=newWin)
+                    new_pwd = askstring(parent=newWin,title='获取验证码成功', prompt='请输入新密码', initialvalue='')
+                    verify_code = askstring(parent=newWin,title='获取验证码成功', prompt='请输入验证码：', initialvalue='')
+                    newWin.destroy()
+                    client_logic.retrieve_pwd_verify_code(user_name=user_name,new_pwd=new_pwd, verify_code=verify_code)
                 elif data['response'] == 'fail':
                     server_connection.user = User()
                     messagebox.showerror('警告', data['msg'])
@@ -369,12 +501,14 @@ class Client_Logic:
                 elif data['response'] == 'fail':
                     server_connection.user = User()
                     messagebox.showerror('警告', data['msg'])
+            elif data['type'] == 'get_my_group_rsp':
+                if data['response'] == 'ok':
+                    group_list = data['group_list']
+                    client_logic.main_win.show_group_list(group_list)
 
-            if data['type'] == 'get_users':
-                users = {}
-                users['广场'] = True
-                for user in data['data']:  #
-                    users[user] = True
+                elif data['response'] == 'fail':
+                    server_connection.user = User()
+                    messagebox.showerror('警告', data['msg'])
 
 
 server_connection = None

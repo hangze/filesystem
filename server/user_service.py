@@ -1,12 +1,12 @@
 import os
-import pickle
 import time
 from hashlib import sha1
 
 from basiclib.common_util import CommonUtil
 from basiclib.mail_util import MailServer
+from enity.group import Group
 from enity.user import User
-from file_service import FileService
+from basiclib.file_service import FileService
 
 
 class UserService:
@@ -14,12 +14,23 @@ class UserService:
     token_dict = dict()
     user_dict = dict()
     user_name_verify_code = dict()
+    group_dict=dict()
 
     def __init__(self):
         self.load_token_dict()
         self.load_user_dict()
+        self.load_group_dict()
 
     # @staticmethod
+
+
+    def save_group_dict(self):
+        CommonUtil.save_data("group_dict.dat", self.group_dict)
+
+    def load_group_dict(self):
+        group_dict = CommonUtil.load_data("group_dict.dat")
+        if group_dict:
+            self.group_dict=group_dict
 
     def save_user_dict(self):
         CommonUtil.save_data("user_dict.dat", self.user_dict)
@@ -57,6 +68,7 @@ class UserService:
             self.token_dict[token] = user_name
             self.save_token_dict()
             return token
+        raise Exception("密码错误，登录失败")
 
     def register(self, user_name, user_pwd, user_email):
         if user_name in self.user_dict.keys():
@@ -80,17 +92,53 @@ class UserService:
         main_server.send_verify_mail(verify_code=verify_code, des_mail_addr=user_email)
         self.user_name_verify_code.update({user_name: verify_code})
 
-    def retrive_pwd_verify(self, user_name: str, user_email: str, user_new_pwd, user_verify_code: str):
+    def retrive_pwd_verify(self, user_name: str, user_new_pwd, verify_code: str):
         if user_name in self.user_name_verify_code.keys():
-            if user_verify_code == self.user_name_verify_code[user_name]:
+            if verify_code == self.user_name_verify_code[user_name]:
                 self.user_dict[user_name].update_pwd(user_new_pwd)
                 self.save_user_dict()
                 return True
-        raise Exception("验证失败")
+        raise Exception("验证码错误")
 
     def get_user_email(self,user_name):
         if user_name in self.user_dict:
             user_email=self.user_dict[user_name].user_email
             return user_email
         raise Exception("用户名不存在")
+
+    def user_add_group(self,user_name,group_name,group_key):
+        if user_name not in self.user_dict:
+            raise Exception("用户名不存在")
+        if group_name not in self.group_dict:
+            self.create_group(group_name,group_key)
+        self.user_dict[user_name].add_group(group_name)
+        self.group_dict[group_name].add_group_member(user_name)
+        self.save_user_dict()
+        self.save_group_dict()
+
+    def get_user_group(self,user_name):
+        if user_name not in self.user_dict:
+            raise Exception("用户名不存在")
+        return self.user_dict[user_name].user_group
+
+    def is_group_member(self,user_name,group_name):
+        if user_name not in self.user_dict:
+            raise Exception("用户名不存在")
+        user=self.user_dict[user_name]
+        if group_name not in user.user_group:
+            raise Exception("非群组成员")
+        return True
+
+    def create_group(self,group_name,group_key):
+
+        if group_name in self.group_dict.keys():
+            raise Exception("群组已存在")
+        group= Group()
+        group.user_name=group_name
+        group.pwd_key=group_key
+        group.user_disk_name=FileService.get_user_disk_dir(group_name)
+        group.user_file_sec_key=sha1(os.urandom(24)).hexdigest()
+        self.group_dict.update({group_name:group})
+        self.save_group_dict()
+
 

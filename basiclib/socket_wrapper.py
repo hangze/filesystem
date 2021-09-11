@@ -76,6 +76,8 @@ class SocketConnect:
         t1.start()  # 启动该线程
 
 
+
+
     def p2p_connect(self, server_ip, server_port, private_key):
         self.socket.connect((server_ip, int(server_port)))
         self.raw_send({'cmd': 'get_private_key', 'public_key': self.public_key})

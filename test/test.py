@@ -15,7 +15,7 @@ def test_mail_send():
     port = 25  # 端口
     sender = '17328618471@163.com'  # 发件人邮箱
     psw = 'EKYKJABHUUBFDJTN'  # 发件人密码
-    receiver = "784985696@qq.com"  # 接收人
+    receiver = "xxxxxx@qq.com"  # 接收人
 
     # 编写邮件主题和正文，正文用的html格式
     subject = '邮件主题'
